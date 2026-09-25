@@ -43,15 +43,15 @@ export const AdminNeonDbView: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ connectionString: cleanedString })
       });
-      const data = await res.json();
-      if (res.ok) {
+      const data = await res.json().catch(() => ({ error: 'Falha ao processar resposta do servidor.' }));
+      if (res.ok && data.success) {
         setMessage({ type: 'success', text: data.message || 'Conectado ao Neon DB com sucesso!' });
         fetchStatus();
       } else {
         setMessage({ type: 'error', text: data.error || 'Erro ao conectar com Neon DB.' });
       }
     } catch (err: any) {
-      setMessage({ type: 'error', text: 'Falha de comunicação ao conectar com o Neon DB. Verifique a URL.' });
+      setMessage({ type: 'error', text: 'Falha de comunicação: ' + (err.message || 'Verifique a URL de conexão.') });
     } finally {
       setLoading(false);
     }

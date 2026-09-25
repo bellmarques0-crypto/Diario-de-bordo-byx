@@ -219,10 +219,23 @@ function createPool(connectionString: string) {
     try { dbPool.end(); } catch (e) {}
   }
   const cleanedUrl = cleanNeonConnectionString(connectionString);
+
+  // Extract hostname for TLS SNI Extension (required by Neon SSL proxies)
+  let servername: string | undefined = undefined;
+  try {
+    const hostMatch = cleanedUrl.match(/@([^:/]+)/);
+    if (hostMatch) {
+      servername = hostMatch[1];
+    }
+  } catch (e) {}
+
   dbPool = new pg.Pool({
     connectionString: cleanedUrl,
-    ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 10000,
+    ssl: {
+      rejectUnauthorized: false,
+      servername
+    },
+    connectionTimeoutMillis: 5000,
     idleTimeoutMillis: 30000
   });
 }
@@ -239,10 +252,34 @@ async function initDbTables() {
 
 async function initDbTablesWithDetails(): Promise<{ success: boolean; error?: string }> {
   if (!dbPool) return { success: false, error: 'Pool de conexão não configurado.' };
+
+  let client: pg.PoolClient | null = null;
   try {
-    const client = await dbPool.connect();
-    try {
-      await client.query(`
+    client = await dbPool.connect();
+  } catch (connectErr: any) {
+    // Fallback: If pooled host (-pooler.) failed, try direct endpoint (removing -pooler)
+    if (currentDbUrl && currentDbUrl.includes('-pooler.')) {
+      const directUrl = currentDbUrl.replace('-pooler.', '.');
+      try {
+        currentDbUrl = directUrl;
+        createPool(directUrl);
+        if (dbPool) {
+          client = await dbPool.connect();
+        }
+      } catch (fallbackErr: any) {
+        return { success: false, error: connectErr.message || String(connectErr) };
+      }
+    } else {
+      return { success: false, error: connectErr.message || String(connectErr) };
+    }
+  }
+
+  if (!client) {
+    return { success: false, error: 'Não foi possível conectar ao servidor PostgreSQL.' };
+  }
+
+  try {
+    await client.query(`
         CREATE TABLE IF NOT EXISTS users (
           id VARCHAR(50) PRIMARY KEY,
           nome VARCHAR(255) NOT NULL,
@@ -294,37 +331,38 @@ async function initDbTablesWithDetails(): Promise<{ success: boolean; error?: st
         );
       `);
 
-      // Check if seeded
-      const res = await client.query('SELECT count(*) FROM occurrences');
-      if (parseInt(res.rows[0].count, 10) === 0) {
-        // Seed database
-        for (const u of mockUsers) {
-          await client.query(
-            `INSERT INTO users (id, nome, email, cargo, perfil, status, departamento, data_cadastro) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING`,
-            [u.id, u.nome, u.email, u.cargo, u.perfil, u.status, u.departamento, u.dataCadastro]
-          );
-        }
-        for (const p of mockProducts) {
-          await client.query(
-            `INSERT INTO products (id, nome, codigo, status) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING`,
-            [p.id, p.nome, p.codigo, p.status]
-          );
-        }
-        for (const o of mockOccurrences) {
-          await client.query(
-            `INSERT INTO occurrences (id, data_ocorrencia, hora_ocorrencia, produto, tipo_ocorrencia, tipo_impacto, sistema_impactado, descricao_sistema, responsavel_ocorrencia, status, descricao_ocorrencia, evidencia_url, data_solucao, hora_solucao, responsavel_solucao, descricao_solucao, data_criacao, data_atualizacao)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) ON CONFLICT DO NOTHING`,
-            [o.id, o.dataOcorrencia, o.horaOcorrencia, o.produto, o.tipoOcorrencia, o.tipoImpacto, o.sistemaImpactado, o.descricaoSistema, o.responsavelOcorrencia, o.status, o.descricaoOcorrencia, o.evidenciaUrl, o.dataSolucao, o.horaSolucao, o.responsavelSolucao, o.descricaoSolucao, o.dataCriacao, o.dataAtualizacao]
-          );
-        }
+    // Check if seeded
+    const res = await client.query('SELECT count(*) FROM occurrences');
+    if (parseInt(res.rows[0].count, 10) === 0) {
+      // Seed database
+      for (const u of mockUsers) {
+        await client.query(
+          `INSERT INTO users (id, nome, email, cargo, perfil, status, departamento, data_cadastro) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING`,
+          [u.id, u.nome, u.email, u.cargo, u.perfil, u.status, u.departamento, u.dataCadastro]
+        );
       }
-      return { success: true };
-    } finally {
-      client.release();
+      for (const p of mockProducts) {
+        await client.query(
+          `INSERT INTO products (id, nome, codigo, status) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING`,
+          [p.id, p.nome, p.codigo, p.status]
+        );
+      }
+      for (const o of mockOccurrences) {
+        await client.query(
+          `INSERT INTO occurrences (id, data_ocorrencia, hora_ocorrencia, produto, tipo_ocorrencia, tipo_impacto, sistema_impactado, descricao_sistema, responsavel_ocorrencia, status, descricao_ocorrencia, evidencia_url, data_solucao, hora_solucao, responsavel_solucao, descricao_solucao, data_criacao, data_atualizacao)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) ON CONFLICT DO NOTHING`,
+          [o.id, o.dataOcorrencia, o.horaOcorrencia, o.produto, o.tipoOcorrencia, o.tipoImpacto, o.sistemaImpactado, o.descricaoSistema, o.responsavelOcorrencia, o.status, o.descricaoOcorrencia, o.evidenciaUrl, o.dataSolucao, o.horaSolucao, o.responsavelSolucao, o.descricaoSolucao, o.dataCriacao, o.dataAtualizacao]
+        );
+      }
     }
+    return { success: true };
   } catch (err: any) {
     console.error('Error initializing Neon tables:', err);
     return { success: false, error: err.message || String(err) };
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 }
 
