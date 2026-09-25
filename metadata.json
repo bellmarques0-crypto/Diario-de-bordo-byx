@@ -1,0 +1,6 @@
+{
+  "name": "Diário de Bordo Operacional - Gestão de Ocorrências",
+  "description": "Sistema completo de Diário de Bordo Operacional, controle de ocorrências, gestão de usuários e integração com banco de dados Neon PostgreSQL.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
