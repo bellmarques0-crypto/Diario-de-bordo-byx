@@ -885,6 +885,8 @@ app.get(['/api/occurrences/:id/timeline', '/occurrences/:id/timeline'], async (r
 
 // Users Management (Cadastro de Usuários)
 app.get(['/api/users', '/users'], async (_req: Request, res: Response) => {
+  await initDbTablesWithDetails();
+  
   const dbUrl = getEffectiveDbUrl();
   if (dbUrl) {
     try {
