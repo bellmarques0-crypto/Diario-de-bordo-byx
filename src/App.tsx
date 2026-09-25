@@ -366,12 +366,12 @@ const handleLoginSubmit = async (e: React.FormEvent) => {
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Usuário / Operador
               </label>
-              <input
-                type="text"
-                required
-                placeholder="Ex: operador.noc"
-                value={loginUser}
-                onChange={(e) => setLoginUser(e.target.value)}
+<input
+  type="text"
+  name="login-user"
+  autoComplete="username"
+  value={loginUser}
+  onChange={(e) => setLoginUser(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30"
               />
             </div>
@@ -380,12 +380,12 @@ const handleLoginSubmit = async (e: React.FormEvent) => {
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Senha de Acesso
               </label>
-              <input
-                type="password"
-                required
-                placeholder="••••••••"
-                value={loginPass}
-                onChange={(e) => setLoginPass(e.target.value)}
+<input
+  type="password"
+  name="login-password"
+  autoComplete="current-password"
+  value={loginPass}
+  onChange={(e) => setLoginPass(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30"
               />
             </div>
