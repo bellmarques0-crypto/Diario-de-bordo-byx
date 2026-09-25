@@ -371,6 +371,35 @@ async function initDbTablesWithDetails(): Promise<{ success: boolean; error?: st
   ADD COLUMN IF NOT EXISTS senha VARCHAR(255);
 `);
 
+    await client.query(`
+  INSERT INTO users (
+    id,
+    nome,
+    email,
+    usuario,
+    senha,
+    cargo,
+    perfil,
+    status,
+    departamento,
+    data_cadastro
+  )
+  SELECT
+    'usr_admin',
+    'Administrador',
+    'admin@empresa.com.br',
+    'admin',
+    '123456',
+    'Administrador do Sistema',
+    'Administrador',
+    'Ativo',
+    'Operações',
+    CURRENT_DATE::text
+  WHERE NOT EXISTS (
+    SELECT 1 FROM users WHERE usuario = 'admin'
+  );
+`);
+    
     // Check if seeded
     const res = await client.query('SELECT count(*) FROM occurrences');
     if (parseInt(res.rows[0].count, 10) === 0) {
