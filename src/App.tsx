@@ -76,53 +76,63 @@ export default function App() {
   const [newProductCode, setNewProductCode] = useState('');
   const [newProductStatus, setNewProductStatus] = useState<'Ativo' | 'Inativo'>('Ativo');
 
+  const safeJsonFetch = async (url: string, options?: RequestInit) => {
+    try {
+      const res = await fetch(url, options);
+      const isJson = res.headers.get('content-type')?.includes('application/json');
+      if (isJson) {
+        const data = await res.json();
+        return { ok: res.ok, status: res.status, data };
+      }
+      const text = await res.text();
+      return { ok: false, status: res.status, error: text || 'Resposta não-JSON do servidor' };
+    } catch (err: any) {
+      return { ok: false, status: 0, error: err.message || 'Falha na conexão de rede' };
+    }
+  };
+
   // Initial Data Fetching
   const fetchOccurrences = async () => {
-    try {
-      const res = await fetch('/api/occurrences');
-      const data = await res.json();
-      if (Array.isArray(data)) setOccurrences(data);
-    } catch (err) {
-      console.error('Error fetching occurrences:', err);
+    const result = await safeJsonFetch('/api/occurrences');
+    if (result.ok && Array.isArray(result.data)) {
+      setOccurrences(result.data);
+    } else {
+      console.warn('Ocorrências fetch:', result.error || result.data?.error);
     }
   };
 
   const fetchUsers = async () => {
-    try {
-      const res = await fetch('/api/users');
-      const data = await res.json();
-      if (Array.isArray(data)) setUsers(data);
-    } catch (err) {
-      console.error('Error fetching users:', err);
+    const result = await safeJsonFetch('/api/users');
+    if (result.ok && Array.isArray(result.data)) {
+      setUsers(result.data);
+    } else {
+      console.warn('Usuários fetch:', result.error || result.data?.error);
     }
   };
 
   const fetchProducts = async () => {
-    try {
-      const res = await fetch('/api/products');
-      const data = await res.json();
-      if (Array.isArray(data)) setProducts(data);
-    } catch (err) {
-      console.error('Error fetching products:', err);
+    const result = await safeJsonFetch('/api/products');
+    if (result.ok && Array.isArray(result.data)) {
+      setProducts(result.data);
+    } else {
+      console.warn('Produtos fetch:', result.error || result.data?.error);
     }
   };
 
   const fetchRoles = async () => {
-    try {
-      const res = await fetch('/api/roles');
-      const data = await res.json();
-      if (Array.isArray(data)) setRoles(data);
-    } catch (err) {
-      console.error('Error fetching roles:', err);
+    const result = await safeJsonFetch('/api/roles');
+    if (result.ok && Array.isArray(result.data)) {
+      setRoles(result.data);
+    } else {
+      console.warn('Roles fetch:', result.error || result.data?.error);
     }
   };
 
   const checkNeonStatus = async () => {
-    try {
-      const res = await fetch('/api/neon/status');
-      const data = await res.json();
-      setNeonConnected(Boolean(data.isConnected));
-    } catch (err) {
+    const result = await safeJsonFetch('/api/neon/status');
+    if (result.ok && result.data) {
+      setNeonConnected(Boolean(result.data.isConnected));
+    } else {
       setNeonConnected(false);
     }
   };

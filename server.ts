@@ -338,6 +338,15 @@ async function initDbTablesWithDetails(): Promise<{ success: boolean; error?: st
           status_anterior VARCHAR(50),
           status_novo VARCHAR(50)
         );
+
+        CREATE TABLE IF NOT EXISTS roles (
+          id VARCHAR(50) PRIMARY KEY,
+          nome VARCHAR(255) NOT NULL,
+          descricao TEXT,
+          status VARCHAR(20) NOT NULL,
+          permissoes TEXT,
+          data_criacao VARCHAR(50)
+        );
       `);
 
     // Check if seeded
@@ -361,6 +370,12 @@ async function initDbTablesWithDetails(): Promise<{ success: boolean; error?: st
           `INSERT INTO occurrences (id, data_ocorrencia, hora_ocorrencia, produto, tipo_ocorrencia, tipo_impacto, sistema_impactado, descricao_sistema, responsavel_ocorrencia, status, descricao_ocorrencia, evidencia_url, data_solucao, hora_solucao, responsavel_solucao, descricao_solucao, data_criacao, data_atualizacao)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) ON CONFLICT DO NOTHING`,
           [o.id, o.dataOcorrencia, o.horaOcorrencia, o.produto, o.tipoOcorrencia, o.tipoImpacto, o.sistemaImpactado, o.descricaoSistema, o.responsavelOcorrencia, o.status, o.descricaoOcorrencia, o.evidenciaUrl, o.dataSolucao, o.horaSolucao, o.responsavelSolucao, o.descricaoSolucao, o.dataCriacao, o.dataAtualizacao]
+        );
+      }
+      for (const r of mockRoles) {
+        await client.query(
+          `INSERT INTO roles (id, nome, descricao, status, permissoes) VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
+          [r.id, r.nome, r.descricao, r.status, JSON.stringify(r.permissoes || [])]
         );
       }
     }
@@ -416,9 +431,9 @@ app.get('/api/neon/status', async (_req: Request, res: Response) => {
 
 // Configure / Connect Neon Database URL
 app.post('/api/neon/connect', async (req: Request, res: Response) => {
-  const { connectionString } = req.body;
+  const connectionString = req.body?.connectionString || process.env.DATABASE_URL || process.env.NEON_DATABASE_URL;
   if (!connectionString || typeof connectionString !== 'string') {
-    return res.status(400).json({ error: 'String de conexão inválida.' });
+    return res.status(400).json({ error: 'String de conexão não fornecida e DATABASE_URL não configurada.' });
   }
 
   const cleanedUrl = cleanNeonConnectionString(connectionString);
@@ -504,11 +519,12 @@ app.get('/api/occurrences', async (_req: Request, res: Response) => {
       } finally {
         client.release();
       }
-    } catch (err) {
-      console.warn('Fallback to memory due to DB read error');
+    } catch (err: any) {
+      console.error('Neon DB Error on GET /api/occurrences:', err);
+      return res.status(500).json({ error: 'Erro de conexão no banco Neon DB: ' + (err.message || String(err)) });
     }
   }
-  res.json(mockOccurrences);
+  return res.json(mockOccurrences);
 });
 
 app.post('/api/occurrences/batch', async (req: Request, res: Response) => {
@@ -741,27 +757,26 @@ app.get('/api/occurrences/:id/timeline', async (req: Request, res: Response) => 
       const client = await dbPool.connect();
       try {
         const result = await client.query('SELECT * FROM timeline_events WHERE ocorrencia_id=$1 ORDER BY data_hora ASC', [id]);
-        if (result.rows.length > 0) {
-          const formatted = result.rows.map(r => ({
-            id: r.id,
-            ocorrenciaId: r.ocorrencia_id,
-            dataHora: r.data_hora,
-            autor: r.autor,
-            acao: r.acao,
-            detalhes: r.detalhes,
-            statusAnterior: r.status_anterior,
-            statusNovo: r.status_novo
-          }));
-          return res.json(formatted);
-        }
+        const formatted = result.rows.map(r => ({
+          id: r.id,
+          ocorrenciaId: r.ocorrencia_id,
+          dataHora: r.data_hora,
+          autor: r.autor,
+          acao: r.acao,
+          detalhes: r.detalhes,
+          statusAnterior: r.status_anterior,
+          statusNovo: r.status_novo
+        }));
+        return res.json(formatted);
       } finally {
         client.release();
       }
-    } catch (err) {
-      // Fallback
+    } catch (err: any) {
+      console.error('Neon DB Error on GET timeline:', err);
+      return res.status(500).json({ error: 'Erro no Neon DB ao consultar histórico: ' + (err.message || String(err)) });
     }
   }
-  res.json(mockTimeline[id] || []);
+  return res.json(mockTimeline[id] || []);
 });
 
 // Users Management (Cadastro de Usuários)
@@ -771,27 +786,26 @@ app.get('/api/users', async (_req: Request, res: Response) => {
       const client = await dbPool.connect();
       try {
         const result = await client.query('SELECT * FROM users ORDER BY nome ASC');
-        if (result.rows.length > 0) {
-          const formatted = result.rows.map(r => ({
-            id: r.id,
-            nome: r.nome,
-            email: r.email,
-            cargo: r.cargo,
-            perfil: r.perfil,
-            status: r.status,
-            departamento: r.departamento,
-            dataCadastro: r.data_cadastro
-          }));
-          return res.json(formatted);
-        }
+        const formatted = result.rows.map(r => ({
+          id: r.id,
+          nome: r.nome,
+          email: r.email,
+          cargo: r.cargo,
+          perfil: r.perfil,
+          status: r.status,
+          departamento: r.departamento,
+          dataCadastro: r.data_cadastro
+        }));
+        return res.json(formatted);
       } finally {
         client.release();
       }
-    } catch (err) {
-      // Fallback
+    } catch (err: any) {
+      console.error('Neon DB Error on GET /api/users:', err);
+      return res.status(500).json({ error: 'Erro no Neon DB ao consultar usuários: ' + (err.message || String(err)) });
     }
   }
-  res.json(mockUsers);
+  return res.json(mockUsers);
 });
 
 app.post('/api/users', async (req: Request, res: Response) => {
@@ -879,15 +893,16 @@ app.get('/api/products', async (_req: Request, res: Response) => {
       const client = await dbPool.connect();
       try {
         const result = await client.query('SELECT * FROM products ORDER BY nome ASC');
-        if (result.rows.length > 0) {
-          return res.json(result.rows);
-        }
+        return res.json(result.rows);
       } finally {
         client.release();
       }
-    } catch (err) {}
+    } catch (err: any) {
+      console.error('Neon DB Error on GET /api/products:', err);
+      return res.status(500).json({ error: 'Erro no Neon DB ao consultar produtos: ' + (err.message || String(err)) });
+    }
   }
-  res.json(mockProducts);
+  return res.json(mockProducts);
 });
 
 app.post('/api/products', async (req: Request, res: Response) => {
@@ -966,23 +981,24 @@ app.get('/api/roles', async (_req: Request, res: Response) => {
       const client = await dbPool.connect();
       try {
         const result = await client.query('SELECT * FROM roles ORDER BY nome ASC');
-        if (result.rows.length > 0) {
-          const formatted = result.rows.map(r => ({
-            id: r.id,
-            nome: r.nome,
-            descricao: r.descricao,
-            status: r.status,
-            permissoes: typeof r.permissoes === 'string' ? JSON.parse(r.permissoes) : r.permissoes,
-            dataCriacao: r.data_criacao
-          }));
-          return res.json(formatted);
-        }
+        const formatted = result.rows.map(r => ({
+          id: r.id,
+          nome: r.nome,
+          descricao: r.descricao,
+          status: r.status,
+          permissoes: typeof r.permissoes === 'string' ? JSON.parse(r.permissoes) : (r.permissoes || []),
+          dataCriacao: r.data_criacao
+        }));
+        return res.json(formatted);
       } finally {
         client.release();
       }
-    } catch (err) {}
+    } catch (err: any) {
+      console.error('Neon DB Error on GET /api/roles:', err);
+      return res.status(500).json({ error: 'Erro no Neon DB ao consultar perfis: ' + (err.message || String(err)) });
+    }
   }
-  res.json(mockRoles);
+  return res.json(mockRoles);
 });
 
 app.post('/api/roles', async (req: Request, res: Response) => {
