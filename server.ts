@@ -192,17 +192,39 @@ let mockTimeline: Record<string, any[]> = {
   ]
 };
 
+// Helper to sanitize Neon connection strings (e.g. stripping channel_binding=require unsupported by JS pg driver)
+function cleanNeonConnectionString(url: string): string {
+  if (!url || typeof url !== 'string') return '';
+  let cleaned = url.trim();
+
+  // Convert postgres:// to postgresql://
+  if (cleaned.startsWith('postgres://')) {
+    cleaned = 'postgresql://' + cleaned.substring(11);
+  }
+
+  // Remove channel_binding query params which break JS pg SCRAM authentication
+  cleaned = cleaned.replace(/([?&])channel_binding=[^&]*(&|$)/gi, '$1');
+
+  // Fix URL query formatting
+  cleaned = cleaned.replace(/\?&/g, '?').replace(/&&/g, '&').replace(/[?&]$/, '');
+
+  return cleaned;
+}
+
 // Neon Database pool variable
 let dbPool: pg.Pool | null = null;
-let currentDbUrl: string = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || '';
+let currentDbUrl: string = cleanNeonConnectionString(process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || '');
 
 function createPool(connectionString: string) {
   if (dbPool) {
     try { dbPool.end(); } catch (e) {}
   }
+  const cleanedUrl = cleanNeonConnectionString(connectionString);
   dbPool = new pg.Pool({
-    connectionString,
-    ssl: { rejectUnauthorized: false }
+    connectionString: cleanedUrl,
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000
   });
 }
 
@@ -212,7 +234,12 @@ if (currentDbUrl) {
 
 // Database helper functions
 async function initDbTables() {
-  if (!dbPool) return false;
+  const result = await initDbTablesWithDetails();
+  return result.success;
+}
+
+async function initDbTablesWithDetails(): Promise<{ success: boolean; error?: string }> {
+  if (!dbPool) return { success: false, error: 'Pool de conexão não configurado.' };
   try {
     const client = await dbPool.connect();
     try {
@@ -292,13 +319,13 @@ async function initDbTables() {
           );
         }
       }
-      return true;
+      return { success: true };
     } finally {
       client.release();
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error('Error initializing Neon tables:', err);
-    return false;
+    return { success: false, error: err.message || String(err) };
   }
 }
 
@@ -348,14 +375,16 @@ app.post('/api/neon/connect', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'String de conexão inválida.' });
   }
 
+  const cleanedUrl = cleanNeonConnectionString(connectionString);
+
   try {
-    currentDbUrl = connectionString;
-    createPool(connectionString);
-    const success = await initDbTables();
-    if (success) {
+    currentDbUrl = cleanedUrl;
+    createPool(cleanedUrl);
+    const result = await initDbTablesWithDetails();
+    if (result.success) {
       return res.json({ success: true, message: 'Conectado ao Neon DB com sucesso!' });
     } else {
-      return res.status(500).json({ error: 'Erro ao inicializar tabelas no Neon DB.' });
+      return res.status(500).json({ error: 'Erro ao conectar com Neon DB: ' + (result.error || 'Falha desconhecida') });
     }
   } catch (err: any) {
     res.status(500).json({ error: 'Falha de conexão com o banco Neon: ' + (err.message || String(err)) });

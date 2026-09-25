@@ -29,11 +29,19 @@ export const AdminNeonDbView: React.FC = () => {
     setLoading(true);
     setMessage(null);
 
+    // Clean connection string parameters (like channel_binding=require)
+    const cleanedString = connectionString
+      .trim()
+      .replace(/([?&])channel_binding=[^&]*(&|$)/gi, '$1')
+      .replace(/\?&/g, '?')
+      .replace(/&&/g, '&')
+      .replace(/[?&]$/, '');
+
     try {
       const res = await fetch('/api/neon/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ connectionString })
+        body: JSON.stringify({ connectionString: cleanedString })
       });
       const data = await res.json();
       if (res.ok) {
@@ -43,7 +51,7 @@ export const AdminNeonDbView: React.FC = () => {
         setMessage({ type: 'error', text: data.error || 'Erro ao conectar com Neon DB.' });
       }
     } catch (err: any) {
-      setMessage({ type: 'error', text: 'Falha de rede ao conectar com o Neon DB.' });
+      setMessage({ type: 'error', text: 'Falha de comunicação ao conectar com o Neon DB. Verifique a URL.' });
     } finally {
       setLoading(false);
     }
