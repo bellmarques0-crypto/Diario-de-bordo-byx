@@ -8,7 +8,8 @@ import {
   Radio,
   Clock,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  LogOut
 } from 'lucide-react';
 import { Occurrence } from '../types';
 
@@ -20,6 +21,7 @@ interface TopNavProps {
   neonConnected: boolean;
   isDarkMode?: boolean;
   onToggleDarkMode?: (enabled: boolean) => void;
+  onLogout?: () => void;
   occurrences?: Occurrence[];
 }
 
@@ -31,6 +33,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   neonConnected,
   isDarkMode = false,
   onToggleDarkMode,
+  onLogout,
   occurrences = []
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -203,6 +206,17 @@ export const TopNav: React.FC<TopNavProps> = ({
                 title={isDarkMode ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
               >
                 {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+              </button>
+            )}
+
+            {/* Sair / Logout Button */}
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="w-9 h-9 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/60 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 flex items-center justify-center transition-all shadow-2xs"
+                title="Sair do Sistema"
+              >
+                <LogOut className="w-4 h-4" />
               </button>
             )}
           </div>

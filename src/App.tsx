@@ -13,7 +13,7 @@ import { DashboardView } from './components/DashboardView';
 import { SinalizacoesView } from './components/SinalizacoesView';
 import { AbsenteismoView } from './components/AbsenteismoView';
 import { Occurrence, User, Product, RoleProfile } from './types';
-import { Package, Plus, Trash2, Edit3, Save, X, KeyRound } from 'lucide-react';
+import { Package, Plus, Trash2, Edit3, Save, X, KeyRound, BookOpen } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('diario');
@@ -24,6 +24,22 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     return localStorage.getItem('theme') === 'dark';
   });
+
+  // Auth State
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [loginUser, setLoginUser] = useState('');
+  const [loginPass, setLoginPass] = useState('');
+
+  const handleLogout = () => {
+    if (confirm('Deseja realmente sair do sistema?')) {
+      setIsAuthenticated(false);
+    }
+  };
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsAuthenticated(true);
+  };
 
   useEffect(() => {
     if (isDarkMode) {
@@ -296,6 +312,68 @@ export default function App() {
     }
   };
 
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-700/50 text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-16 h-16 rounded-2xl bg-blue-600 text-white flex items-center justify-center mx-auto shadow-lg shadow-blue-500/30">
+            <BookOpen className="w-8 h-8" />
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Diário de Bordo
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Sistema Operacional de Registro e Monitoramento
+            </p>
+          </div>
+
+          <form onSubmit={handleLoginSubmit} className="space-y-4 text-left pt-2">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Usuário / Operador
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="Ex: operador.noc"
+                value={loginUser}
+                onChange={(e) => setLoginUser(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Senha de Acesso
+              </label>
+              <input
+                type="password"
+                required
+                placeholder="••••••••"
+                value={loginPass}
+                onChange={(e) => setLoginPass(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 pt-2"
+            >
+              <span>Entrar no Sistema</span>
+            </button>
+          </form>
+
+          <p className="text-[11px] text-slate-400">
+            Acesso Restrito — Controle de Ocorrências Operacionais
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors">
       {/* Top Navbar */}
@@ -307,6 +385,7 @@ export default function App() {
         neonConnected={neonConnected}
         isDarkMode={isDarkMode}
         onToggleDarkMode={setIsDarkMode}
+        onLogout={handleLogout}
         occurrences={occurrences}
       />
 
