@@ -27,9 +27,11 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({
   const [loading, setLoading] = useState(false);
 
   // Form Fields
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [cargo, setCargo] = useState('');
+const [nome, setNome] = useState('');
+const [email, setEmail] = useState('');
+const [usuario, setUsuario] = useState('');
+const [senha, setSenha] = useState('');
+const [cargo, setCargo] = useState('');
   const [perfil, setPerfil] = useState<string>('Operador');
   const [departamento, setDepartamento] = useState('Operações / NOC');
   const [status, setStatus] = useState<UserStatus>('Ativo');
