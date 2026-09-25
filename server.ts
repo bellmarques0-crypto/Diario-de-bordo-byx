@@ -903,11 +903,33 @@ app.post(['/api/users', '/users'], async (req: Request, res: Response) => {
       const pool = getPool(dbUrl);
       const client = await pool.connect();
       try {
-        await client.query(
-          `INSERT INTO users (id, nome, email, cargo, perfil, status, departamento, data_cadastro)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-          [newUser.id, newUser.nome, newUser.email, newUser.cargo, newUser.perfil, newUser.status, newUser.departamento, newUser.dataCadastro]
-        );
+await client.query(
+  `INSERT INTO users (
+    id,
+    nome,
+    email,
+    usuario,
+    senha,
+    cargo,
+    perfil,
+    status,
+    departamento,
+    data_cadastro
+  )
+  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+  [
+    newUser.id,
+    newUser.nome,
+    newUser.email,
+    newUser.usuario,
+    newUser.senha,
+    newUser.cargo,
+    newUser.perfil,
+    newUser.status,
+    newUser.departamento,
+    newUser.dataCadastro
+  ]
+);
       } finally {
         client.release();
       }
