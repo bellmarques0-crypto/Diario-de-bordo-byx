@@ -371,7 +371,7 @@ async function initDbTablesWithDetails(): Promise<{ success: boolean; error?: st
   ADD COLUMN IF NOT EXISTS senha VARCHAR(255);
 `);
 
-    await client.query(`
+await client.query(`
   INSERT INTO users (
     id,
     nome,
@@ -396,7 +396,9 @@ async function initDbTablesWithDetails(): Promise<{ success: boolean; error?: st
     'Operações',
     CURRENT_DATE::text
   WHERE NOT EXISTS (
-    SELECT 1 FROM users WHERE usuario = 'admin'
+    SELECT 1
+    FROM users
+    WHERE usuario = 'admin'
   );
 `);
     
