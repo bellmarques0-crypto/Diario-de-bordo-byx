@@ -861,16 +861,18 @@ app.get(['/api/users', '/users'], async (_req: Request, res: Response) => {
       const client = await pool.connect();
       try {
         const result = await client.query('SELECT * FROM users ORDER BY nome ASC');
-        const formatted = result.rows.map(r => ({
-          id: r.id,
-          nome: r.nome,
-          email: r.email,
-          cargo: r.cargo,
-          perfil: r.perfil,
-          status: r.status,
-          departamento: r.departamento,
-          dataCadastro: r.data_cadastro
-        }));
+const formatted = result.rows.map(r => ({
+  id: r.id,
+  nome: r.nome,
+  email: r.email,
+  usuario: r.usuario || '',
+  senha: r.senha || '',
+  cargo: r.cargo,
+  perfil: r.perfil,
+  status: r.status,
+  departamento: r.departamento,
+  dataCadastro: r.data_cadastro
+}));
         return res.json(formatted);
       } finally {
         client.release();
