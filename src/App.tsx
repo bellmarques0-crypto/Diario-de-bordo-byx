@@ -36,10 +36,32 @@ export default function App() {
     }
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsAuthenticated(true);
-  };
+const handleLoginSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  const result = await safeJsonFetch('/api/users');
+
+  if (!result.ok || !Array.isArray(result.data)) {
+    alert('Não foi possível validar o acesso. Tente novamente.');
+    return;
+  }
+
+  const user = result.data.find(
+    (u: User) =>
+      (u.usuario || '').trim().toLowerCase() === loginUser.trim().toLowerCase() &&
+      u.senha === loginPass &&
+      u.status === 'Ativo'
+  );
+
+  if (!user) {
+    alert('Usuário ou senha inválidos.');
+    return;
+  }
+
+  setIsAuthenticated(true);
+  setLoginUser('');
+  setLoginPass('');
+};
 
   useEffect(() => {
     if (isDarkMode) {
