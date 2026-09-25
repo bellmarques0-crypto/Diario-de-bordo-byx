@@ -1,6 +1,4 @@
-import express, { Request, Response } from 'express';
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import ws from 'ws';
+import { Pool } from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
