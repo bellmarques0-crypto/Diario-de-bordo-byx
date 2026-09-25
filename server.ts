@@ -365,6 +365,12 @@ async function initDbTablesWithDetails(): Promise<{ success: boolean; error?: st
       );
     `);
 
+    await client.query(`
+  ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS usuario VARCHAR(100),
+  ADD COLUMN IF NOT EXISTS senha VARCHAR(255);
+`);
+
     // Check if seeded
     const res = await client.query('SELECT count(*) FROM occurrences');
     if (parseInt(res.rows[0].count, 10) === 0) {
