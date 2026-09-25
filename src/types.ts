@@ -39,6 +39,8 @@ export interface User {
   id: string;
   nome: string;
   email: string;
+  usuario: string;
+  senha: string;
   cargo: string;
   perfil: string;
   status: UserStatus;
