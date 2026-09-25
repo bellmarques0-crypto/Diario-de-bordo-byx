@@ -10,6 +10,15 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Vercel Serverless URL Normalization middleware
+app.use((req, _res, next) => {
+  if (req.url.startsWith('/api/index')) {
+    req.url = req.url.replace('/api/index', '/api');
+    if (req.url === '' || req.url === '/') req.url = '/api';
+  }
+  next();
+});
+
 // Initial seed data matching user screenshots
 let mockUsers = [
   {
@@ -1045,6 +1054,12 @@ app.delete('/api/roles/:id', async (req: Request, res: Response) => {
   }
 
   res.json({ success: true });
+});
+
+// Global Express Error Handler
+app.use((err: any, _req: Request, res: Response, _next: any) => {
+  console.error('Express Error:', err);
+  res.status(500).json({ error: err?.message || 'Erro interno do servidor' });
 });
 
 // Vite Server initialization in Dev Mode
