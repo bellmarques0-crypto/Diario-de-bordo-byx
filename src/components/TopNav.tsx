@@ -87,7 +87,25 @@ export const TopNav: React.FC<TopNavProps> = ({
 {/* Administração tab */}
 {permissions.includes('acesso_administracao') && (
   <button
-    onClick={() => setActiveTab('administracao')}
+    onClick={() => {
+      const podeGerenciar =
+        permissions.includes('gerenciar_usuarios') ||
+        permissions.includes('gerenciar_produtos') ||
+        permissions.includes('gerenciar_acessos') ||
+        permissions.includes('gerenciar_banco_neon');
+
+      if (!podeGerenciar) {
+        setAdminSubTab('config');
+      }
+
+      setActiveTab('administracao');
+    }}
+    ...
+  >
+    <Settings className="w-4 h-4" />
+    Administração
+  </button>
+)}
     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
       activeTab === 'administracao'
         ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
