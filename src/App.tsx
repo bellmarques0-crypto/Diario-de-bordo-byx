@@ -184,7 +184,13 @@ const updateCurrentUserPermissions = (
   console.log('PERFIL ENCONTRADO:', role);
   console.log('PERMISSÕES:', role?.permissoes || []);
 
-  setCurrentPermissions(role?.permissoes || []);
+const permissoes = role?.permissoes || [];
+
+alert(
+  `Perfil: ${user.perfil}\n\nPermissões:\n${permissoes.join('\n')}`
+);
+
+setCurrentPermissions(permissoes);
 };
   
   const checkNeonStatus = async () => {
