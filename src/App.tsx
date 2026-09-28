@@ -156,10 +156,36 @@ setLoginPass('');
     }
   };
 
-  const updateCurrentUserPermissions = (
+const updateCurrentUserPermissions = (
   user: User | null,
   rolesList: RoleProfile[]
 ) => {
+  if (!user) {
+    setCurrentPermissions([]);
+    return;
+  }
+
+  // Administrador tem todas as permissões
+  if (user.perfil?.trim().toLowerCase() === 'administrador') {
+    setCurrentPermissions(ALL_PERMISSION_IDS);
+    return;
+  }
+
+  // Procura o perfil do usuário
+  const role = rolesList.find(
+    r =>
+      r.nome?.trim().toLowerCase() ===
+      user.perfil?.trim().toLowerCase()
+  );
+
+  console.log('USUÁRIO LOGADO:', user);
+  console.log('PERFIL DO USUÁRIO:', user.perfil);
+  console.log('PERFIS CARREGADOS:', rolesList);
+  console.log('PERFIL ENCONTRADO:', role);
+  console.log('PERMISSÕES:', role?.permissoes || []);
+
+  setCurrentPermissions(role?.permissoes || []);
+};
   if (!user) {
     setCurrentPermissions([]);
     return;
