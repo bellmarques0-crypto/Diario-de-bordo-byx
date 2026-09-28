@@ -216,16 +216,19 @@ const handleLoginSubmit = async (e: React.FormEvent) => {
   };
 
   // Users CRUD
-  const handleAddUser = async (userData: Omit<User, 'id' | 'dataCadastro'>) => {
-    const res = await fetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData)
-    });
-    if (res.ok) {
-      fetchUsers();
-    }
-  };
+const handleAddUser = async (userData: Omit<User, 'id' | 'dataCadastro'>) => {
+  console.log('DADOS DO NOVO USUÁRIO:', userData);
+
+  const res = await fetch('/api/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userData)
+  });
+
+  if (res.ok) {
+    fetchUsers();
+  }
+};
 
   const handleUpdateUser = async (id: string, userData: Partial<User>) => {
     const res = await fetch(`/api/users/${id}`, {
