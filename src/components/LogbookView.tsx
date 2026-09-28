@@ -26,6 +26,7 @@ interface LogbookViewProps {
   occurrences: Occurrence[];
   products: Product[];
   users: User[];
+  permissions?: string[];
   onOpenCreateModal: () => void;
   onOpenImportModal: () => void;
   onOpenEditModal: (occ: Occurrence) => void;
@@ -40,6 +41,7 @@ export const LogbookView: React.FC<LogbookViewProps> = ({
   occurrences,
   products,
   users,
+  permissions = [],
   onOpenCreateModal,
   onOpenImportModal,
   onOpenEditModal,
@@ -58,6 +60,14 @@ export const LogbookView: React.FC<LogbookViewProps> = ({
   const [responsavelFilter, setResponsavelFilter] = useState('Todos os Responsáveis');
   const [impactoFilter, setImpactoFilter] = useState('Todos os Impactos');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Granular Permissions check for Diário de Bordo
+  const hasLoadedPermissions = permissions && permissions.length > 0;
+  const canCreate = !hasLoadedPermissions || permissions.includes('criar_ocorrencia');
+  const canImport = !hasLoadedPermissions || permissions.includes('importar_excel');
+  const canExport = !hasLoadedPermissions || permissions.includes('exportar_relatorios');
+  const canEdit = !hasLoadedPermissions || permissions.includes('editar_ocorrencia');
+  const canDelete = !hasLoadedPermissions || permissions.includes('excluir_ocorrencia');
 
   const resetFilters = () => {
     setDataInicial('');
@@ -268,29 +278,35 @@ export const LogbookView: React.FC<LogbookViewProps> = ({
 
           {/* Action Buttons Row (+ Nova Ocorrência, Importar Excel & Exportar Excel) */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={onOpenCreateModal}
-              className="w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-md shadow-blue-500/20 transition-all"
-              title="Novo Registro no Diário de Bordo"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
+            {canCreate && (
+              <button
+                onClick={onOpenCreateModal}
+                className="w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-md shadow-blue-500/20 transition-all"
+                title="Novo Registro no Diário de Bordo"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            )}
 
-            <button
-              onClick={onOpenImportModal}
-              className="w-9 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shadow-xs transition-all"
-              title="Importar Ocorrências via Excel (.xlsx / .csv)"
-            >
-              <Upload className="w-4 h-4" />
-            </button>
+            {canImport && (
+              <button
+                onClick={onOpenImportModal}
+                className="w-9 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shadow-xs transition-all"
+                title="Importar Ocorrências via Excel (.xlsx / .csv)"
+              >
+                <Upload className="w-4 h-4" />
+              </button>
+            )}
 
-            <button
-              onClick={handleExportExcel}
-              className="w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-xs transition-all"
-              title="Exportar para Excel / CSV"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-            </button>
+            {canExport && (
+              <button
+                onClick={handleExportExcel}
+                className="w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-xs transition-all"
+                title="Exportar para Excel / CSV"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -565,20 +581,27 @@ export const LogbookView: React.FC<LogbookViewProps> = ({
                     {/* AÇÕES */}
                     <td className="py-3.5 px-4 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => onOpenEditModal(occ)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                          title="Editar"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => onDeleteOccurrence(occ.id)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                          title="Excluir"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => onOpenEditModal(occ)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                            title="Editar"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={() => onDeleteOccurrence(occ.id)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                            title="Excluir"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {!canEdit && !canDelete && (
+                          <span className="text-[11px] font-medium text-slate-400 italic">Somente Leitura</span>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -172,19 +172,22 @@ const updateCurrentUserPermissions = (
   }
 
   // Procura o perfil do usuário
+  const userPerfil = user.perfil?.trim().toLowerCase() || '';
   const role = rolesList.find(
-    r =>
-      r.nome?.trim().toLowerCase() ===
-      user.perfil?.trim().toLowerCase()
+    r => {
+      const rName = r.nome?.trim().toLowerCase() || '';
+      return rName === userPerfil || rName.includes(userPerfil) || userPerfil.includes(rName);
+    }
   );
 
-  console.log('USUÁRIO LOGADO:', user);
-  console.log('PERFIL DO USUÁRIO:', user.perfil);
-  console.log('PERFIS CARREGADOS:', rolesList);
-  console.log('PERFIL ENCONTRADO:', role);
-  console.log('PERMISSÕES:', role?.permissoes || []);
+  if (userPerfil.includes('visualizador')) {
+    const visualizadorPerms = (role?.permissoes || ['ver_diario', 'exportar_relatorios', 'ver_dashboard', 'ver_sinalizacoes'])
+      .filter(p => p !== 'criar_ocorrencia' && p !== 'editar_ocorrencia' && p !== 'excluir_ocorrencia' && p !== 'importar_excel');
+    setCurrentPermissions(visualizadorPerms);
+    return;
+  }
 
-setCurrentPermissions(role?.permissoes || []);
+  setCurrentPermissions(role?.permissoes || []);
 };
   
   const checkNeonStatus = async () => {
@@ -490,6 +493,7 @@ const handleAddUser = async (userData: Omit<User, 'id' | 'dataCadastro'>) => {
             occurrences={occurrences}
             products={products}
             users={users}
+            permissions={currentPermissions}
             onOpenCreateModal={() => {
               setEditingOccurrence(null);
               setIsOccurrenceModalOpen(true);
