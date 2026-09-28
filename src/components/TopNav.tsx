@@ -99,13 +99,12 @@ export const TopNav: React.FC<TopNavProps> = ({
 
       setActiveTab('administracao');
     }}
-    ...
   >
     <Settings className="w-4 h-4" />
     Administração
   </button>
 )}
-          </nav>
+</nav>
 
           {/* Right Area: Notification Bell (Sininho de Sinalizações) + Dark Mode Quick Toggle */}
           <div className="hidden lg:flex items-center gap-2.5 relative">
