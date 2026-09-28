@@ -711,7 +711,8 @@ const handleAddUser = async (userData: Omit<User, 'id' | 'dataCadastro'>) => {
 
 {adminSubTab === 'neon' &&
   currentPermissions.includes('gerenciar_banco_neon') && (
-    <AdminNeonDbView />}
+    <AdminNeonDbView />
+  )}
           </div>
         )}
       </main>
