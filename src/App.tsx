@@ -28,6 +28,7 @@ export default function App() {
   // Auth State
 const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentPermissions, setCurrentPermissions] = useState<string[]>([]);
 const [loginUser, setLoginUser] = useState('');
 const [loginPass, setLoginPass] = useState('');
 
