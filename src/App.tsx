@@ -200,11 +200,13 @@ useEffect(() => {
   updateCurrentUserPermissions(currentUser, roles);
 }, [currentUser, roles]);
 
-    const interval = setInterval(() => {
-      checkNeonStatus();
-    }, 15000);
-    return () => clearInterval(interval);
-  }, []);
+useEffect(() => {
+  const interval = setInterval(() => {
+    checkNeonStatus();
+  }, 15000);
+
+  return () => clearInterval(interval);
+}, []);
 
   // Occurrences CRUD
   const handleSaveOccurrence = async (data: Partial<Occurrence>) => {
