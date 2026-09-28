@@ -200,6 +200,10 @@ useEffect(() => {
   updateCurrentUserPermissions(currentUser, roles);
 }, [currentUser, roles]);
 
+  const hasPermission = (permission: string) => {
+  return currentPermissions.includes(permission);
+};
+  
 useEffect(() => {
   const interval = setInterval(() => {
     checkNeonStatus();
