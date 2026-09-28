@@ -494,16 +494,37 @@ const handleAddUser = async (userData: Omit<User, 'id' | 'dataCadastro'>) => {
             products={products}
             users={users}
             permissions={currentPermissions}
+            currentUser={currentUser}
             onOpenCreateModal={() => {
+              if (currentUser?.perfil?.trim().toLowerCase().includes('visualizador')) {
+                alert('Perfil Visualizador possui acesso apenas de leitura.');
+                return;
+              }
               setEditingOccurrence(null);
               setIsOccurrenceModalOpen(true);
             }}
-            onOpenImportModal={() => setIsImportModalOpen(true)}
+            onOpenImportModal={() => {
+              if (currentUser?.perfil?.trim().toLowerCase().includes('visualizador')) {
+                alert('Perfil Visualizador possui acesso apenas de leitura.');
+                return;
+              }
+              setIsImportModalOpen(true);
+            }}
             onOpenEditModal={(occ) => {
+              if (currentUser?.perfil?.trim().toLowerCase().includes('visualizador')) {
+                alert('Perfil Visualizador possui acesso apenas de leitura.');
+                return;
+              }
               setEditingOccurrence(occ);
               setIsOccurrenceModalOpen(true);
             }}
-            onDeleteOccurrence={handleDeleteOccurrence}
+            onDeleteOccurrence={(id) => {
+              if (currentUser?.perfil?.trim().toLowerCase().includes('visualizador')) {
+                alert('Perfil Visualizador possui acesso apenas de leitura.');
+                return;
+              }
+              handleDeleteOccurrence(id);
+            }}
             onViewTimeline={(occ) => {
               setTimelineOccurrence(occ);
               setIsTimelineModalOpen(true);

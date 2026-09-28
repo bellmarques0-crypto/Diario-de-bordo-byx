@@ -27,6 +27,7 @@ interface LogbookViewProps {
   products: Product[];
   users: User[];
   permissions?: string[];
+  currentUser?: User | null;
   onOpenCreateModal: () => void;
   onOpenImportModal: () => void;
   onOpenEditModal: (occ: Occurrence) => void;
@@ -42,6 +43,7 @@ export const LogbookView: React.FC<LogbookViewProps> = ({
   products,
   users,
   permissions = [],
+  currentUser,
   onOpenCreateModal,
   onOpenImportModal,
   onOpenEditModal,
@@ -61,13 +63,18 @@ export const LogbookView: React.FC<LogbookViewProps> = ({
   const [impactoFilter, setImpactoFilter] = useState('Todos os Impactos');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Granular Permissions check for Diário de Bordo
+  // Strict Permissions check for Visualizador & general permissions
+  const isVisualizadorUser = Boolean(
+    currentUser?.perfil?.trim().toLowerCase().includes('visualizador')
+  );
+
   const hasLoadedPermissions = permissions && permissions.length > 0;
-  const canCreate = !hasLoadedPermissions || permissions.includes('criar_ocorrencia');
-  const canImport = !hasLoadedPermissions || permissions.includes('importar_excel');
-  const canExport = !hasLoadedPermissions || permissions.includes('exportar_relatorios');
-  const canEdit = !hasLoadedPermissions || permissions.includes('editar_ocorrencia');
-  const canDelete = !hasLoadedPermissions || permissions.includes('excluir_ocorrencia');
+
+  const canCreate = !isVisualizadorUser && (hasLoadedPermissions ? permissions.includes('criar_ocorrencia') : true);
+  const canImport = !isVisualizadorUser && (hasLoadedPermissions ? permissions.includes('importar_excel') : true);
+  const canExport = hasLoadedPermissions ? permissions.includes('exportar_relatorios') : true;
+  const canEdit = !isVisualizadorUser && (hasLoadedPermissions ? permissions.includes('editar_ocorrencia') : true);
+  const canDelete = !isVisualizadorUser && (hasLoadedPermissions ? permissions.includes('excluir_ocorrencia') : true);
 
   const resetFilters = () => {
     setDataInicial('');
