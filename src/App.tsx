@@ -517,65 +517,64 @@ const handleAddUser = async (userData: Omit<User, 'id' | 'dataCadastro'>) => {
         {activeTab === 'administracao' && (
           <div className="space-y-6">
             {/* Admin Subtabs bar */}
-            <div className="flex border-b border-slate-200 gap-6">
-              <button
-                onClick={() => setAdminSubTab('usuarios')}
-                className={`pb-3 text-xs font-bold border-b-2 transition-all ${
-                  adminSubTab === 'usuarios'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                Cadastro de Usuários
-              </button>
+<div className="flex border-b border-slate-200 gap-6">
 
-              <button
-                onClick={() => setAdminSubTab('produtos')}
-                className={`pb-3 text-xs font-bold border-b-2 transition-all ${
-                  adminSubTab === 'produtos'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                Produtos e Sistemas
-              </button>
+  {currentPermissions.includes('gerenciar_usuarios') && (
+    <button
+      onClick={() => setAdminSubTab('usuarios')}
+      className={`pb-3 text-xs font-bold border-b-2 transition-all ${
+        adminSubTab === 'usuarios'
+          ? 'border-blue-600 text-blue-600'
+          : 'border-transparent text-slate-500 hover:text-slate-800'
+      }`}
+    >
+      Cadastro de Usuários
+    </button>
+  )}
 
-              <button
-                onClick={() => setAdminSubTab('acessos')}
-                className={`pb-3 text-xs font-bold border-b-2 transition-all ${
-                  adminSubTab === 'acessos'
-                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-                }`}
-              >
-                Ajuste de Acessos
-              </button>
+  {currentPermissions.includes('gerenciar_produtos') && (
+    <button
+      onClick={() => setAdminSubTab('produtos')}
+      className={`pb-3 text-xs font-bold border-b-2 transition-all ${
+        adminSubTab === 'produtos'
+          ? 'border-blue-600 text-blue-600'
+          : 'border-transparent text-slate-500 hover:text-slate-800'
+      }`}
+    >
+      Produtos e Sistemas
+    </button>
+  )}
 
-              <button
-                onClick={() => setAdminSubTab('config')}
-                className={`pb-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
-                  adminSubTab === 'config'
-                    ? 'border-amber-500 text-amber-600 dark:text-amber-400 dark:border-amber-400'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-                }`}
-              >
-                <KeyRound className="w-3.5 h-3.5" />
-                Segurança & Preferências
-              </button>
+  {currentPermissions.includes('gerenciar_acessos') && (
+    <button
+      onClick={() => setAdminSubTab('acessos')}
+      className={`pb-3 text-xs font-bold border-b-2 transition-all ${
+        adminSubTab === 'acessos'
+          ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+          : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+      }`}
+    >
+      Ajuste de Acessos
+    </button>
+  )}
 
-              <button
-                onClick={() => setAdminSubTab('neon')}
-                className={`pb-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-                  adminSubTab === 'neon'
-                    ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400 dark:border-emerald-400'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-                }`}
-              >
-                Banco de Dados Neon DB
-                <span className={`w-2 h-2 rounded-full ${neonConnected ? 'bg-emerald-500' : 'bg-amber-400'}`}></span>
-              </button>
-            </div>
+  {currentPermissions.includes('gerenciar_banco_neon') && (
+    <button
+      onClick={() => setAdminSubTab('neon')}
+      className={`pb-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+        adminSubTab === 'neon'
+          ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400 dark:border-emerald-400'
+          : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+      }`}
+    >
+      Banco de Dados Neon DB
+      <span className={`w-2 h-2 rounded-full ${
+        neonConnected ? 'bg-emerald-500' : 'bg-amber-400'
+      }`}></span>
+    </button>
+  )}
 
+</div>
             {/* Subtab Content */}
             {adminSubTab === 'usuarios' && (
               <AdminUsersView
