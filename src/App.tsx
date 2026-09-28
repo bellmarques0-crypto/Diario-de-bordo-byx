@@ -186,15 +186,6 @@ const updateCurrentUserPermissions = (
 
   setCurrentPermissions(role?.permissoes || []);
 };
-
-  const role = rolesList.find(
-    r =>
-      r.nome?.trim().toLowerCase() ===
-      user.perfil?.trim().toLowerCase()
-  );
-
-  setCurrentPermissions(role?.permissoes || []);
-};
   
   const checkNeonStatus = async () => {
     const result = await safeJsonFetch('/api/neon/status');
