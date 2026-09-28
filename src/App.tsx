@@ -36,6 +36,7 @@ const [loginPass, setLoginPass] = useState('');
 const handleLogout = () => {
   if (confirm('Deseja realmente sair do sistema?')) {
     setCurrentUser(null);
+    setCurrentPermissions([]);
     setIsAuthenticated(false);
   }
 };
@@ -66,7 +67,8 @@ setCurrentUser(user);
 setIsAuthenticated(true);
 setLoginUser('');
 setLoginPass('');
-
+};
+  
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
