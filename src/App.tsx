@@ -576,18 +576,20 @@ const handleAddUser = async (userData: Omit<User, 'id' | 'dataCadastro'>) => {
 
 </div>
             {/* Subtab Content */}
-            {adminSubTab === 'usuarios' && (
-              <AdminUsersView
-                users={users}
-                roles={roles}
-                onAddUser={handleAddUser}
-                onUpdateUser={handleUpdateUser}
-                onDeleteUser={handleDeleteUser}
-              />
-            )}
+{adminSubTab === 'usuarios' &&
+  currentPermissions.includes('gerenciar_usuarios') && (
+    <AdminUsersView
+      users={users}
+      roles={roles}
+      onAddUser={handleAddUser}
+      onUpdateUser={handleUpdateUser}
+      onDeleteUser={handleDeleteUser}
+    />
+  )}
 
-            {adminSubTab === 'acessos' && (
-              <AdminAccessView
+{adminSubTab === 'acessos' &&
+  currentPermissions.includes('gerenciar_acessos') && (
+  <AdminAccessView
                 roles={roles}
                 onAddRole={handleAddRole}
                 onUpdateRole={handleUpdateRole}
@@ -602,7 +604,8 @@ const handleAddUser = async (userData: Omit<User, 'id' | 'dataCadastro'>) => {
               />
             )}
 
-            {adminSubTab === 'produtos' && (
+{adminSubTab === 'produtos' &&
+  currentPermissions.includes('gerenciar_produtos') && (
               <div className="space-y-6">
                 <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -706,7 +709,9 @@ const handleAddUser = async (userData: Omit<User, 'id' | 'dataCadastro'>) => {
               </div>
             )}
 
-            {adminSubTab === 'neon' && <AdminNeonDbView />}
+{adminSubTab === 'neon' &&
+  currentPermissions.includes('gerenciar_banco_neon') && (
+    <AdminNeonDbView />}
           </div>
         )}
       </main>
