@@ -13,6 +13,7 @@ import { DashboardView } from './components/DashboardView';
 import { SinalizacoesView } from './components/SinalizacoesView';
 import { AbsenteismoView } from './components/AbsenteismoView';
 import { Occurrence, User, Product, RoleProfile } from './types';
+import { ALL_PERMISSION_IDS } from './components/AdminAccessView';
 import { Package, Plus, Trash2, Edit3, Save, X, KeyRound, BookOpen } from 'lucide-react';
 
 export default function App() {
@@ -153,6 +154,29 @@ setLoginPass('');
     }
   };
 
+  const updateCurrentUserPermissions = (
+  user: User | null,
+  rolesList: RoleProfile[]
+) => {
+  if (!user) {
+    setCurrentPermissions([]);
+    return;
+  }
+
+  if (user.perfil?.trim().toLowerCase() === 'administrador') {
+    setCurrentPermissions(ALL_PERMISSION_IDS);
+    return;
+  }
+
+  const role = rolesList.find(
+    r =>
+      r.nome?.trim().toLowerCase() ===
+      user.perfil?.trim().toLowerCase()
+  );
+
+  setCurrentPermissions(role?.permissoes || []);
+};
+  
   const checkNeonStatus = async () => {
     const result = await safeJsonFetch('/api/neon/status');
     if (result.ok && result.data) {
