@@ -186,14 +186,15 @@ setLoginPass('');
     }
   };
 
-  useEffect(() => {
-    fetchOccurrences();
-    fetchUsers();
-    fetchProducts();
-    fetchRoles();
-    checkNeonStatus();
+useEffect(() => {
+  fetchOccurrences();
+  fetchUsers();
+  fetchProducts();
+  fetchRoles();
+  checkNeonStatus();
+}, []);
 
-    useEffect(() => {
+useEffect(() => {
   updateCurrentUserPermissions(currentUser, roles);
 }, [currentUser, roles]);
 
