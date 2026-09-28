@@ -83,7 +83,6 @@ export const TopNav: React.FC<TopNavProps> = ({
               Diário de Bordo
             </button>
 
-            {/* Administração tab */}
 {/* Administração tab */}
 {permissions.includes('acesso_administracao') && (
   <button
