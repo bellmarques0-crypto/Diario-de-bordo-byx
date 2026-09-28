@@ -26,15 +26,17 @@ export default function App() {
   });
 
   // Auth State
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [loginUser, setLoginUser] = useState('');
-  const [loginPass, setLoginPass] = useState('');
+const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+const [currentUser, setCurrentUser] = useState<User | null>(null);
+const [loginUser, setLoginUser] = useState('');
+const [loginPass, setLoginPass] = useState('');
 
-  const handleLogout = () => {
-    if (confirm('Deseja realmente sair do sistema?')) {
-      setIsAuthenticated(false);
-    }
-  };
+const handleLogout = () => {
+  if (confirm('Deseja realmente sair do sistema?')) {
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+  }
+};
 
 const handleLoginSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -46,22 +48,22 @@ const handleLoginSubmit = async (e: React.FormEvent) => {
     return;
   }
 
-  const user = result.data.find(
-    (u: User) =>
-      (u.usuario || '').trim().toLowerCase() === loginUser.trim().toLowerCase() &&
-      u.senha === loginPass &&
-      u.status === 'Ativo'
-  );
+const user = result.data.find(
+  (u: User) =>
+    (u.usuario || '').trim().toLowerCase() === loginUser.trim().toLowerCase() &&
+    u.senha === loginPass &&
+    u.status === 'Ativo'
+);
 
-  if (!user) {
-    alert('Usuário ou senha inválidos.');
-    return;
-  }
+if (!user) {
+  alert('Usuário ou senha inválidos.');
+  return;
+}
 
-  setIsAuthenticated(true);
-  setLoginUser('');
-  setLoginPass('');
-};
+setCurrentUser(user);
+setIsAuthenticated(true);
+setLoginUser('');
+setLoginPass('');
 
   useEffect(() => {
     if (isDarkMode) {
