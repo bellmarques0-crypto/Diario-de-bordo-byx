@@ -193,6 +193,10 @@ setLoginPass('');
     fetchRoles();
     checkNeonStatus();
 
+    useEffect(() => {
+  updateCurrentUserPermissions(currentUser, roles);
+}, [currentUser, roles]);
+
     const interval = setInterval(() => {
       checkNeonStatus();
     }, 15000);
