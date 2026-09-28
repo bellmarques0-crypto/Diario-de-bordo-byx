@@ -194,6 +194,23 @@ export const LogbookView: React.FC<LogbookViewProps> = ({
     XLSX.writeFile(wb, 'Template_Importacao_Diario_de_Bordo.xlsx');
   };
 
+  // Export to Excel / CSV
+  const handleExportExcel = () => {
+    const headers = ['ID,Data,Hora,Produto,Tipo,Impacto,Sistema,Responsável,Status,Solução\n'];
+    const rows = filteredOccurrences.map(
+      (o) =>
+        `"${o.id}","${o.dataOcorrencia}","${o.horaOcorrencia}","${o.produto}","${o.tipoOcorrencia}","${o.tipoImpacto}","${o.sistemaImpactado}","${o.responsavelOcorrencia}","${o.status}","${o.descricaoSolucao || ''}"`
+    );
+    const blob = new Blob([headers + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `diario_de_bordo_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Export PDF / Print
   const handleExportPDF = () => {
     window.print();
