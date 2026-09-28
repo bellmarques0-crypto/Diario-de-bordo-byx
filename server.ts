@@ -980,35 +980,106 @@ await client.query(
 
 app.put(['/api/users/:id', '/users/:id'], async (req: Request, res: Response) => {
   const { id } = req.params;
-  const idx = mockUsers.findIndex(u => u.id === id);
-  if (idx === -1) {
-    return res.status(404).json({ success: false, error: 'Usuário não encontrado' });
-  }
-
-  const updatedUser = { ...mockUsers[idx], ...req.body };
-  mockUsers[idx] = updatedUser;
 
   const dbUrl = getEffectiveDbUrl();
+
   if (dbUrl) {
     try {
       const pool = getPool(dbUrl);
       const client = await pool.connect();
+
       try {
-        await client.query(
-          `UPDATE users SET nome=$1, email=$2, cargo=$3, perfil=$4, status=$5, departamento=$6 WHERE id=$7`,
-          [updatedUser.nome, updatedUser.email, updatedUser.cargo, updatedUser.perfil, updatedUser.status, updatedUser.departamento, id]
+        const result = await client.query(
+          `UPDATE users
+           SET
+             nome=$1,
+             email=$2,
+             usuario=$3,
+             senha=$4,
+             cargo=$5,
+             perfil=$6,
+             status=$7,
+             departamento=$8
+           WHERE id=$9
+           RETURNING
+             id,
+             nome,
+             email,
+             usuario,
+             senha,
+             cargo,
+             perfil,
+             status,
+             departamento,
+             data_cadastro`,
+          [
+            req.body.nome,
+            req.body.email,
+            req.body.usuario,
+            req.body.senha,
+            req.body.cargo,
+            req.body.perfil,
+            req.body.status,
+            req.body.departamento,
+            id
+          ]
         );
+
+        if (result.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            error: 'Usuário não encontrado'
+          });
+        }
+
+        const r = result.rows[0];
+
+        const updatedUser = {
+          id: r.id,
+          nome: r.nome,
+          email: r.email,
+          usuario: r.usuario || '',
+          senha: r.senha || '',
+          cargo: r.cargo,
+          perfil: r.perfil,
+          status: r.status,
+          departamento: r.departamento,
+          dataCadastro: r.data_cadastro
+        };
+
+        mockUsers = mockUsers.map(u =>
+          u.id === id ? updatedUser : u
+        );
+
+        return res.json(updatedUser);
       } finally {
         client.release();
       }
     } catch (err: any) {
       console.error('[Neon Update User Error]', err);
+
       return res.status(500).json({
         success: false,
         error: 'Erro ao atualizar usuário no Neon DB: ' + (err.message || String(err))
       });
     }
   }
+
+  const idx = mockUsers.findIndex(u => u.id === id);
+
+  if (idx === -1) {
+    return res.status(404).json({
+      success: false,
+      error: 'Usuário não encontrado'
+    });
+  }
+
+  const updatedUser = {
+    ...mockUsers[idx],
+    ...req.body
+  };
+
+  mockUsers[idx] = updatedUser;
 
   res.json(updatedUser);
 });
