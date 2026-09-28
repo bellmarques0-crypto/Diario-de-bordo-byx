@@ -83,27 +83,32 @@ export const TopNav: React.FC<TopNavProps> = ({
               Diário de Bordo
             </button>
 
-{/* Administração tab */}
-{permissions.includes('acesso_administracao') && (
-  <button
-    onClick={() => {
-      const podeGerenciar =
-        permissions.includes('gerenciar_usuarios') ||
-        permissions.includes('gerenciar_produtos') ||
-        permissions.includes('gerenciar_acessos') ||
-        permissions.includes('gerenciar_banco_neon');
+            {/* Administração tab */}
+            {permissions.includes('acesso_administracao') && (
+              <button
+                onClick={() => {
+                  const podeGerenciar =
+                    permissions.includes('gerenciar_usuarios') ||
+                    permissions.includes('gerenciar_produtos') ||
+                    permissions.includes('gerenciar_acessos') ||
+                    permissions.includes('gerenciar_banco_neon');
 
-      if (!podeGerenciar) {
-        setAdminSubTab('config');
-      }
+                  if (!podeGerenciar) {
+                    setAdminSubTab('config');
+                  }
 
-      setActiveTab('administracao');
-    }}
-  >
-    <Settings className="w-4 h-4" />
-    Administração
-  </button>
-)}
+                  setActiveTab('administracao');
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+                  activeTab === 'administracao'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                Administração
+              </button>
+            )}
 </nav>
 
           {/* Right Area: Notification Bell (Sininho de Sinalizações) + Dark Mode Quick Toggle */}
