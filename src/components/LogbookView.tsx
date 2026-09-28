@@ -17,8 +17,10 @@ import {
   Trash2,
   Image as ImageIcon,
   Calendar,
-  Upload
+  Upload,
+  Download
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { Occurrence, Product, User } from '../types';
 import { DashboardView } from './DashboardView';
 
@@ -120,21 +122,76 @@ export const LogbookView: React.FC<LogbookViewProps> = ({
   // Average resolution time (calculated or pre-defined matching screenshot)
   const tempoMedio = '169.5 h';
 
-  // Export to Excel / CSV
-  const handleExportExcel = () => {
-    const headers = ['ID,Data,Hora,Produto,Tipo,Impacto,Sistema,Responsável,Status,Solução\n'];
-    const rows = filteredOccurrences.map(
-      (o) =>
-        `"${o.id}","${o.dataOcorrencia}","${o.horaOcorrencia}","${o.produto}","${o.tipoOcorrencia}","${o.tipoImpacto}","${o.sistemaImpactado}","${o.responsavelOcorrencia}","${o.status}","${o.descricaoSolucao || ''}"`
-    );
-    const blob = new Blob([headers + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `diario_de_bordo_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // Download Complete Excel Import Template (18 columns)
+  const handleDownloadTemplate = () => {
+    const sampleData = [
+      {
+        'ID': '101',
+        'Tipo Ocorrência': 'Operacional',
+        'Data Ocorrência': '2026-09-24',
+        'Hora Ocorrência': '09:35',
+        'Produto': 'INTERGRALL',
+        'Sistema Impactado': 'INSTABILIDADE INTERGRALL',
+        'Descrição do Sistema': 'Intergrall teve uma queda temporária na rota de integração de dados.',
+        'Tipo de Impacto': 'Médio',
+        'Status': 'Resolvido',
+        'Responsável Ocorrência': 'LARISSA OLIVEIRA',
+        'Descrição da Ocorrência': 'Verificada perda de pacotes na API de transmissão durante a rotina matutina.',
+        'URL Evidência': 'https://exemplo.com/evidencia.png',
+        'Data Solução': '2026-09-24',
+        'Hora Solução': '11:20',
+        'Responsável Solução': 'LARISSA OLIVEIRA',
+        'Descrição da Solução': 'Resolvido sem necessidade de intervenção técnica prolongada. Rota reestabelecida.',
+        'Usuário Registro': 'LARISSA OLIVEIRA',
+        'Data Cadastro': '2026-09-24 09:35:00'
+      },
+      {
+        'ID': '102',
+        'Tipo Ocorrência': 'Sistemas',
+        'Data Ocorrência': '2026-09-23',
+        'Hora Ocorrência': '14:10',
+        'Produto': 'BANESE',
+        'Sistema Impactado': 'PIX FORA DO AR',
+        'Descrição do Sistema': 'Serviço de liquidação PIX indisponível.',
+        'Tipo de Impacto': 'Alto',
+        'Status': 'Aberto',
+        'Responsável Ocorrência': 'IZABEL MARQUES',
+        'Descrição da Ocorrência': 'Instabilidade no gateway de pagamentos enviando timeout de resposta.',
+        'URL Evidência': '',
+        'Data Solução': '',
+        'Hora Solução': '',
+        'Responsável Solução': '',
+        'Descrição da Solução': '',
+        'Usuário Registro': 'IZABEL MARQUES',
+        'Data Cadastro': '2026-09-23 14:10:00'
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(sampleData);
+    ws['!cols'] = [
+      { wch: 8 },  // ID
+      { wch: 16 }, // Tipo Ocorrência
+      { wch: 15 }, // Data Ocorrência
+      { wch: 15 }, // Hora Ocorrência
+      { wch: 15 }, // Produto
+      { wch: 26 }, // Sistema Impactado
+      { wch: 35 }, // Descrição do Sistema
+      { wch: 15 }, // Tipo de Impacto
+      { wch: 14 }, // Status
+      { wch: 22 }, // Responsável Ocorrência
+      { wch: 45 }, // Descrição da Ocorrência
+      { wch: 30 }, // URL Evidência
+      { wch: 15 }, // Data Solução
+      { wch: 14 }, // Hora Solução
+      { wch: 22 }, // Responsável Solução
+      { wch: 45 }, // Descrição da Solução
+      { wch: 22 }, // Usuário Registro
+      { wch: 20 }  // Data Cadastro
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Template_Diario_de_Bordo');
+    XLSX.writeFile(wb, 'Template_Importacao_Diario_de_Bordo.xlsx');
   };
 
   // Export PDF / Print
@@ -296,13 +353,24 @@ export const LogbookView: React.FC<LogbookViewProps> = ({
             )}
 
             {canImport && (
-              <button
-                onClick={onOpenImportModal}
-                className="w-9 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shadow-xs transition-all"
-                title="Importar Ocorrências via Excel (.xlsx / .csv)"
-              >
-                <Upload className="w-4 h-4" />
-              </button>
+              <>
+                <button
+                  onClick={onOpenImportModal}
+                  className="w-9 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shadow-xs transition-all"
+                  title="Importar Ocorrências via Excel (.xlsx / .csv)"
+                >
+                  <Upload className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={handleDownloadTemplate}
+                  className="h-9 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all"
+                  title="Baixar Modelo de Planilha de Importação (.xlsx) com Todas as Colunas"
+                >
+                  <Download className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Modelo Excel</span>
+                </button>
+              </>
             )}
 
             {canExport && (

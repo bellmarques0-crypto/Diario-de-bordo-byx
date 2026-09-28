@@ -76,7 +76,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
           return;
         }
 
-        // Map column names flexibly matching screenshot columns
+        // Map column names flexibly matching all columns
         const mappedRows: Partial<Occurrence>[] = json.map((row) => {
           // Find key by fuzzy matching header names
           const getKey = (...names: string[]) => {
@@ -87,19 +87,21 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
           };
 
           const rawId = getKey('id');
-          const rawTipo = getKey('tipo');
+          const rawTipo = getKey('tipo de ocorrência', 'tipo ocorrência', 'tipo_ocorrencia', 'tipo');
           const rawDataOcc = getKey('data ocorrência', 'data ocorri', 'data_ocorrencia', 'dataocorrencia');
           const rawHoraOcc = getKey('hora ocorrência', 'hora ocorri', 'hora_ocorrencia', 'horaocorrencia');
           const rawProduto = getKey('produto');
-          const rawOcorrencia = getKey('ocorrência', 'ocorrencia', 'sistema');
-          const rawTipoImpacto = getKey('tipo de im', 'impacto', 'tipo_impacto');
+          const rawSistema = getKey('sistema impactado', 'sistema_impactado', 'ocorrência', 'ocorrencia', 'sistema');
+          const rawDescSistema = getKey('descrição do sistema', 'descricao do sistema', 'descricao_sistema');
+          const rawTipoImpacto = getKey('tipo de impacto', 'tipo_impacto', 'impacto');
           const rawStatus = getKey('status');
-          const rawResponsavel = getKey('responsáv', 'responsavel');
-          const rawComentarios = getKey('comentári', 'comentario', 'descrição', 'descricao');
-          const rawDataSolucao = getKey('data soluç', 'data solucao', 'data_solucao');
-          const rawHoraSolucao = getKey('hora soluç', 'hora solucao', 'hora_solucao');
-          const rawResponsavelSolucao = getKey('responsáv soluç', 'responsavel solucao', 'responsavel_solucao');
-          const rawSolucao = getKey('solução', 'solucao');
+          const rawResponsavel = getKey('responsável ocorrência', 'responsavel ocorrência', 'responsável', 'responsavel');
+          const rawDescOcorrencia = getKey('descrição da ocorrência', 'descricao da ocorrencia', 'comentári', 'comentario', 'descrição', 'descricao');
+          const rawEvidencia = getKey('url evidência', 'url evidencia', 'evidência', 'evidencia');
+          const rawDataSolucao = getKey('data solução', 'data solucao', 'data_solucao');
+          const rawHoraSolucao = getKey('hora solução', 'hora solucao', 'hora_solucao');
+          const rawResponsavelSolucao = getKey('responsável solução', 'responsavel solucao', 'responsavel_solucao');
+          const rawSolucao = getKey('descrição da solução', 'descricao da solucao', 'solução', 'solucao');
           const rawDataCadastro = getKey('data cadastro', 'data_cadastro', 'data_criacao');
 
           return {
@@ -108,15 +110,17 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
             dataOcorrencia: parseExcelDate(rawDataOcc) || new Date().toISOString().split('T')[0],
             horaOcorrencia: parseExcelTime(rawHoraOcc),
             produto: rawProduto || 'Todos',
-            sistemaImpactado: rawOcorrencia || 'Sistema Operacional',
-            tipoImpacto: rawTipoImpacto || 'Médio',
-            status: rawStatus || 'Aberto',
+            sistemaImpactado: rawSistema || 'Sistema Operacional',
+            descricaoSistema: rawDescSistema ? String(rawDescSistema) : undefined,
+            tipoImpacto: (rawTipoImpacto as any) || 'Médio',
+            status: (rawStatus as any) || 'Aberto',
             responsavelOcorrencia: rawResponsavel || 'SISTEMA',
-            descricaoOcorrencia: rawComentarios || rawOcorrencia || 'Sem descrição',
+            descricaoOcorrencia: rawDescOcorrencia || rawSistema || 'Sem descrição',
+            evidenciaUrl: rawEvidencia ? String(rawEvidencia) : null,
             dataSolucao: rawDataSolucao ? parseExcelDate(rawDataSolucao) : undefined,
             horaSolucao: rawHoraSolucao ? parseExcelTime(rawHoraSolucao) : undefined,
-            responsavelSolucao: rawResponsavelSolucao || undefined,
-            descricaoSolucao: rawSolucao || undefined,
+            responsavelSolucao: rawResponsavelSolucao ? String(rawResponsavelSolucao) : undefined,
+            descricaoSolucao: rawSolucao ? String(rawSolucao) : undefined,
             dataCriacao: rawDataCadastro ? String(rawDataCadastro) : new Date().toISOString()
           };
         });
@@ -146,29 +150,74 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
   const handleDownloadSample = () => {
     const sampleData = [
       {
-        ID: 77,
-        Tipo: 'Operacional',
+        'ID': '101',
+        'Tipo Ocorrência': 'Operacional',
         'Data Ocorrência': '2026-09-24',
         'Hora Ocorrência': '09:35',
-        Produto: 'Todos',
-        Ocorrência: 'INSTABILIDADE',
+        'Produto': 'INTERGRALL',
+        'Sistema Impactado': 'INSTABILIDADE INTERGRALL',
+        'Descrição do Sistema': 'Intergrall teve uma queda temporária na rota de integração de dados.',
         'Tipo de Impacto': 'Médio',
-        Status: 'Resolvido',
-        Responsável: 'LARISSA GONÇALVES',
-        Comentários: 'Intergrall timeout na consulta',
+        'Status': 'Resolvido',
+        'Responsável Ocorrência': 'LARISSA OLIVEIRA',
+        'Descrição da Ocorrência': 'Verificada perda de pacotes na API de transmissão durante a rotina matutina.',
+        'URL Evidência': 'https://exemplo.com/evidencia.png',
         'Data Solução': '2026-09-24',
-        'Hora Solução': '09:59',
-        'Responsável Solução': 'LARISSA GONÇALVES',
-        Solução: 'Resolvido após restart no serviço',
-        'Usuário Registro': 'LARISSA GONÇALVES',
-        'Data Cadastro': '24/09/2026 10:00:01'
+        'Hora Solução': '11:20',
+        'Responsável Solução': 'LARISSA OLIVEIRA',
+        'Descrição da Solução': 'Resolvido sem necessidade de intervenção técnica prolongada. Rota reestabelecida.',
+        'Usuário Registro': 'LARISSA OLIVEIRA',
+        'Data Cadastro': '2026-09-24 09:35:00'
+      },
+      {
+        'ID': '102',
+        'Tipo Ocorrência': 'Sistemas',
+        'Data Ocorrência': '2026-09-23',
+        'Hora Ocorrência': '14:10',
+        'Produto': 'BANESE',
+        'Sistema Impactado': 'PIX FORA DO AR',
+        'Descrição do Sistema': 'Serviço de liquidação PIX indisponível.',
+        'Tipo de Impacto': 'Alto',
+        'Status': 'Aberto',
+        'Responsável Ocorrência': 'IZABEL MARQUES',
+        'Descrição da Ocorrência': 'Instabilidade no gateway de pagamentos enviando timeout de resposta.',
+        'URL Evidência': '',
+        'Data Solução': '',
+        'Hora Solução': '',
+        'Responsável Solução': '',
+        'Descrição da Solução': '',
+        'Usuário Registro': 'IZABEL MARQUES',
+        'Data Cadastro': '2026-09-23 14:10:00'
       }
     ];
 
     const ws = XLSX.utils.json_to_sheet(sampleData);
+
+    // Set column widths for comfortable viewing in Excel
+    ws['!cols'] = [
+      { wch: 8 },  // ID
+      { wch: 16 }, // Tipo Ocorrência
+      { wch: 15 }, // Data Ocorrência
+      { wch: 15 }, // Hora Ocorrência
+      { wch: 15 }, // Produto
+      { wch: 26 }, // Sistema Impactado
+      { wch: 35 }, // Descrição do Sistema
+      { wch: 15 }, // Tipo de Impacto
+      { wch: 14 }, // Status
+      { wch: 22 }, // Responsável Ocorrência
+      { wch: 45 }, // Descrição da Ocorrência
+      { wch: 30 }, // URL Evidência
+      { wch: 15 }, // Data Solução
+      { wch: 14 }, // Hora Solução
+      { wch: 22 }, // Responsável Solução
+      { wch: 45 }, // Descrição da Solução
+      { wch: 22 }, // Usuário Registro
+      { wch: 20 }  // Data Cadastro
+    ];
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Modelo_Ocorrencias');
-    XLSX.writeFile(wb, 'Modelo_Importacao_Diario_de_Bordo.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws, 'Template_Diario_de_Bordo');
+    XLSX.writeFile(wb, 'Template_Importacao_Diario_de_Bordo.xlsx');
   };
 
   return (
@@ -203,17 +252,17 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-blue-50/60 border border-blue-100">
             <div className="space-y-1">
               <span className="text-xs font-bold text-blue-900 block">
-                Colunas Suportadas no Arquivo Excel:
+                Template de Importação com Todas as Colunas (18 Colunas):
               </span>
               <p className="text-[11px] text-blue-800 leading-relaxed">
-                ID, Tipo, Data Ocorrência, Hora Ocorrência, Produto, Ocorrência, Tipo de Impacto, Status, Responsável, Comentários, Data Solução, Hora Solução, Responsável Solução, Solução, Usuário Registro, Data Cadastro.
+                ID, Tipo Ocorrência, Data Ocorrência, Hora Ocorrência, Produto, Sistema Impactado, Descrição do Sistema, Tipo de Impacto, Status, Responsável Ocorrência, Descrição da Ocorrência, URL Evidência, Data Solução, Hora Solução, Responsável Solução, Descrição da Solução, Usuário Registro, Data Cadastro.
               </p>
             </div>
             <button
               onClick={handleDownloadSample}
-              className="px-3 py-1.5 rounded-lg bg-white border border-blue-200 text-blue-700 hover:bg-blue-100 text-xs font-bold flex items-center gap-1.5 shrink-0 shadow-xs transition-all"
+              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-2 shrink-0 shadow-sm transition-all"
             >
-              <Download className="w-3.5 h-3.5" /> Modelo Excel
+              <Download className="w-4 h-4" /> Baixar Template (.xlsx)
             </button>
           </div>
 
