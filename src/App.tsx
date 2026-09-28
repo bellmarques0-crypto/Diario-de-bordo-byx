@@ -211,6 +211,9 @@ useEffect(() => {
   const hasPermission = (permission: string) => {
   return currentPermissions.includes(permission);
 };
+
+const isVisualizador =
+  currentUser?.perfil?.trim().toLowerCase() === 'visualizador';
   
 useEffect(() => {
   const interval = setInterval(() => {
