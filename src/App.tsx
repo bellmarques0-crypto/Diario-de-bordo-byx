@@ -186,15 +186,6 @@ const updateCurrentUserPermissions = (
 
   setCurrentPermissions(role?.permissoes || []);
 };
-  if (!user) {
-    setCurrentPermissions([]);
-    return;
-  }
-
-  if (user.perfil?.trim().toLowerCase() === 'administrador') {
-    setCurrentPermissions(ALL_PERMISSION_IDS);
-    return;
-  }
 
   const role = rolesList.find(
     r =>
