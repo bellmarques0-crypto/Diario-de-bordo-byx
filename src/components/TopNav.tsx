@@ -106,16 +106,6 @@ export const TopNav: React.FC<TopNavProps> = ({
     Administração
   </button>
 )}
-    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
-      activeTab === 'administracao'
-        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-    }`}
-  >
-    <Settings className="w-4 h-4" />
-    Administração
-  </button>
-)}
           </nav>
 
           {/* Right Area: Notification Bell (Sininho de Sinalizações) + Dark Mode Quick Toggle */}
