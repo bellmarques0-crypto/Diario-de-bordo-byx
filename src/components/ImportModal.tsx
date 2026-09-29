@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Upload, FileSpreadsheet, Check, AlertCircle, Download, FileCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Upload, FileSpreadsheet, Check, AlertCircle, Download, FileCheck, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Occurrence } from '../types';
 
@@ -9,9 +9,31 @@ interface ImportModalProps {
   onImport: (occurrences: Partial<Occurrence>[]) => Promise<void>;
 }
 
+const MAPPING_FIELDS = [
+  { key: 'id', label: 'ID da Ocorrência', required: false },
+  { key: 'dataOcorrencia', label: 'Data da Ocorrência', required: true },
+  { key: 'horaOcorrencia', label: 'Hora da Ocorrência', required: true },
+  { key: 'produto', label: 'Produto / Serviço', required: true },
+  { key: 'sistemaImpactado', label: 'Sistema Impactado', required: true },
+  { key: 'descricaoSistema', label: 'Descrição do Sistema', required: false },
+  { key: 'tipoImpacto', label: 'Tipo de Impacto (Baixo/Médio/Alto/Crítico)', required: true },
+  { key: 'status', label: 'Status (Aberto/Resolvido/etc.)', required: true },
+  { key: 'responsavelOcorrencia', label: 'Responsável', required: true },
+  { key: 'descricaoOcorrencia', label: 'Descrição / Comentários', required: false },
+  { key: 'evidenciaUrl', label: 'URL da Evidência / Print', required: false },
+  { key: 'dataSolucao', label: 'Data da Solução', required: false },
+  { key: 'horaSolucao', label: 'Hora da Solução', required: false },
+  { key: 'responsavelSolucao', label: 'Responsável da Solução', required: false },
+  { key: 'descricaoSolucao', label: 'Descrição da Solução', required: false },
+];
+
 export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport }) => {
   const [file, setFile] = useState<File | null>(null);
+  const [rawJson, setRawJson] = useState<any[]>([]);
+  const [excelHeaders, setExcelHeaders] = useState<string[]>([]);
+  const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
   const [parsedData, setParsedData] = useState<Partial<Occurrence>[]>([]);
+  const [showMappingPanel, setShowMappingPanel] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -20,7 +42,6 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
   const parseExcelDate = (val: any): string => {
     if (!val) return '';
     if (typeof val === 'number') {
-      // Excel serial date number
       const dateObj = XLSX.SSF.parse_date_code(val);
       if (dateObj) {
         const y = dateObj.y;
@@ -55,6 +76,41 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
     return str;
   };
 
+  const autoDetectMapping = (headers: string[]) => {
+    const findHeader = (exactList: string[], fuzzyList: string[]) => {
+      for (const target of exactList) {
+        const found = headers.find((h) => h.trim().toLowerCase() === target.toLowerCase());
+        if (found) return found;
+      }
+      for (const sub of fuzzyList) {
+        const found = headers.find((h) => h.trim().toLowerCase().includes(sub.toLowerCase()));
+        if (found) return found;
+      }
+      return '';
+    };
+
+    const initialMapping: Record<string, string> = {
+      id: findHeader(['ID', 'id', 'Código'], ['id']),
+      tipoOcorrencia: findHeader(['Tipo Ocorrência', 'Tipo Ocorrencia', 'Tipo'], ['tipo']),
+      dataOcorrencia: findHeader(['Data Ocorrência', 'Data Ocorrencia', 'Data'], ['data ocorr', 'data_ocor']),
+      horaOcorrencia: findHeader(['Hora Ocorrência', 'Hora Ocorrencia', 'Hora'], ['hora ocorr', 'hora_ocor']),
+      produto: findHeader(['Produto', 'produto'], ['produt']),
+      sistemaImpactado: findHeader(['Sistema Impactado', 'Sistema', 'sistema'], ['sistema impact']),
+      descricaoSistema: findHeader(['Descrição do Sistema', 'Descricao do Sistema'], ['descrição do sistema', 'descricao do sistema']),
+      tipoImpacto: findHeader(['Tipo de Impacto', 'Impacto'], ['impacto']),
+      status: findHeader(['Status', 'Estado'], ['status']),
+      responsavelOcorrencia: findHeader(['Responsável Ocorrência', 'Responsável', 'Responsavel'], ['responsável', 'responsavel']),
+      descricaoOcorrencia: findHeader(['Descrição da Ocorrência', 'Comentários', 'Descrição'], ['comentá', 'descrição da ocorr']),
+      evidenciaUrl: findHeader(['URL Evidência', 'Evidência', 'Print'], ['evidênc']),
+      dataSolucao: findHeader(['Data Solução'], ['data soluç']),
+      horaSolucao: findHeader(['Hora Solução'], ['hora soluç']),
+      responsavelSolucao: findHeader(['Responsável Solução'], ['responsável soluç']),
+      descricaoSolucao: findHeader(['Descrição da Solução', 'Solução'], ['solução'])
+    };
+
+    setColumnMapping(initialMapping);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
@@ -68,70 +124,79 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
         const wb = XLSX.read(bstr, { type: 'binary', cellDates: true });
         const wsName = wb.SheetNames[0];
         const ws = wb.Sheets[wsName];
-        const json: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        const json: any[] = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
 
         if (json.length === 0) {
           setErrorMsg('O arquivo está vazio ou não possui linhas válidas.');
+          setRawJson([]);
+          setExcelHeaders([]);
           setParsedData([]);
           return;
         }
 
-        // Map column names flexibly matching all columns
-        const mappedRows: Partial<Occurrence>[] = json.map((row) => {
-          // Find key by fuzzy matching header names
-          const getKey = (...names: string[]) => {
-            const found = Object.keys(row).find((k) =>
-              names.some((n) => k.toLowerCase().trim().includes(n.toLowerCase()))
-            );
-            return found ? row[found] : '';
-          };
-
-          const rawId = getKey('id');
-          const rawTipo = getKey('tipo de ocorrência', 'tipo ocorrência', 'tipo_ocorrencia', 'tipo');
-          const rawDataOcc = getKey('data ocorrência', 'data ocorri', 'data_ocorrencia', 'dataocorrencia');
-          const rawHoraOcc = getKey('hora ocorrência', 'hora ocorri', 'hora_ocorrencia', 'horaocorrencia');
-          const rawProduto = getKey('produto');
-          const rawSistema = getKey('sistema impactado', 'sistema_impactado', 'ocorrência', 'ocorrencia', 'sistema');
-          const rawDescSistema = getKey('descrição do sistema', 'descricao do sistema', 'descricao_sistema');
-          const rawTipoImpacto = getKey('tipo de impacto', 'tipo_impacto', 'impacto');
-          const rawStatus = getKey('status');
-          const rawResponsavel = getKey('responsável ocorrência', 'responsavel ocorrência', 'responsável', 'responsavel');
-          const rawDescOcorrencia = getKey('descrição da ocorrência', 'descricao da ocorrencia', 'comentári', 'comentario', 'descrição', 'descricao');
-          const rawEvidencia = getKey('url evidência', 'url evidencia', 'evidência', 'evidencia');
-          const rawDataSolucao = getKey('data solução', 'data solucao', 'data_solucao');
-          const rawHoraSolucao = getKey('hora solução', 'hora solucao', 'hora_solucao');
-          const rawResponsavelSolucao = getKey('responsável solução', 'responsavel solucao', 'responsavel_solucao');
-          const rawSolucao = getKey('descrição da solução', 'descricao da solucao', 'solução', 'solucao');
-          const rawDataCadastro = getKey('data cadastro', 'data_cadastro', 'data_criacao');
-
-          return {
-            id: rawId ? String(rawId) : undefined,
-            tipoOcorrencia: rawTipo || 'Operacional',
-            dataOcorrencia: parseExcelDate(rawDataOcc) || new Date().toISOString().split('T')[0],
-            horaOcorrencia: parseExcelTime(rawHoraOcc),
-            produto: rawProduto || 'Todos',
-            sistemaImpactado: rawSistema || 'Sistema Operacional',
-            descricaoSistema: rawDescSistema ? String(rawDescSistema) : undefined,
-            tipoImpacto: (rawTipoImpacto as any) || 'Médio',
-            status: (rawStatus as any) || 'Aberto',
-            responsavelOcorrencia: rawResponsavel || 'SISTEMA',
-            descricaoOcorrencia: rawDescOcorrencia || rawSistema || 'Sem descrição',
-            evidenciaUrl: rawEvidencia ? String(rawEvidencia) : null,
-            dataSolucao: rawDataSolucao ? parseExcelDate(rawDataSolucao) : undefined,
-            horaSolucao: rawHoraSolucao ? parseExcelTime(rawHoraSolucao) : undefined,
-            responsavelSolucao: rawResponsavelSolucao ? String(rawResponsavelSolucao) : undefined,
-            descricaoSolucao: rawSolucao ? String(rawSolucao) : undefined,
-            dataCriacao: rawDataCadastro ? String(rawDataCadastro) : new Date().toISOString()
-          };
-        });
-
-        setParsedData(mappedRows);
+        const headers = Object.keys(json[0] || {});
+        setExcelHeaders(headers);
+        setRawJson(json);
+        autoDetectMapping(headers);
       } catch (err: any) {
         console.error(err);
         setErrorMsg('Erro ao ler arquivo Excel. Verifique se o formato está correto.');
       }
     };
     reader.readAsBinaryString(selected);
+  };
+
+  // Re-compute parsedData whenever rawJson or columnMapping changes
+  useEffect(() => {
+    if (rawJson.length === 0) {
+      setParsedData([]);
+      return;
+    }
+
+    const mapped = rawJson.map((row) => {
+      const getVal = (fieldKey: string) => {
+        const colName = columnMapping[fieldKey];
+        if (!colName || row[colName] === undefined || row[colName] === null) return '';
+        return String(row[colName]).trim();
+      };
+
+      const rawDataOcc = getVal('dataOcorrencia');
+      const rawHoraOcc = getVal('horaOcorrencia');
+      const rawDataSol = getVal('dataSolucao');
+      const rawHoraSol = getVal('horaSolucao');
+
+      const sysName = getVal('sistemaImpactado');
+      const sysDesc = getVal('descricaoSistema');
+
+      return {
+        id: getVal('id') || undefined,
+        tipoOcorrencia: getVal('tipoOcorrencia') || 'Operacional',
+        dataOcorrencia: parseExcelDate(rawDataOcc) || new Date().toISOString().split('T')[0],
+        horaOcorrencia: parseExcelTime(rawHoraOcc),
+        produto: getVal('produto') || 'Todos',
+        sistemaImpactado: sysName || 'Sistema Operacional',
+        descricaoSistema: sysDesc || undefined,
+        tipoImpacto: (getVal('tipoImpacto') || 'Médio') as any,
+        status: (getVal('status') || 'Aberto') as any,
+        responsavelOcorrencia: getVal('responsavelOcorrencia') || 'SISTEMA',
+        descricaoOcorrencia: getVal('descricaoOcorrencia') || sysDesc || 'Sem descrição',
+        evidenciaUrl: getVal('evidenciaUrl') || null,
+        dataSolucao: rawDataSol ? parseExcelDate(rawDataSol) : undefined,
+        horaSolucao: rawHoraSol ? parseExcelTime(rawHoraSol) : undefined,
+        responsavelSolucao: getVal('responsavelSolucao') || undefined,
+        descricaoSolucao: getVal('descricaoSolucao') || undefined,
+        dataCriacao: getVal('dataCriacao') || new Date().toISOString()
+      };
+    });
+
+    setParsedData(mapped);
+  }, [rawJson, columnMapping]);
+
+  const handleMappingChange = (fieldKey: string, excelColName: string) => {
+    setColumnMapping((prev) => ({
+      ...prev,
+      [fieldKey]: excelColName
+    }));
   };
 
   const handleConfirmImport = async () => {
@@ -192,8 +257,6 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
     ];
 
     const ws = XLSX.utils.json_to_sheet(sampleData);
-
-    // Set column widths for comfortable viewing in Excel
     ws['!cols'] = [
       { wch: 8 },  // ID
       { wch: 16 }, // Tipo Ocorrência
@@ -252,10 +315,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-blue-50/60 border border-blue-100">
             <div className="space-y-1">
               <span className="text-xs font-bold text-blue-900 block">
-                Template de Importação com Todas as Colunas (18 Colunas):
+                Template de Importação com Todas as Colunas (15 Colunas):
               </span>
               <p className="text-[11px] text-blue-800 leading-relaxed">
-                ID, Tipo Ocorrência, Data Ocorrência, Hora Ocorrência, Produto, Sistema Impactado, Descrição do Sistema, Tipo de Impacto, Status, Responsável Ocorrência, Descrição da Ocorrência, URL Evidência, Data Solução, Hora Solução, Responsável Solução, Descrição da Solução, Usuário Registro, Data Cadastro.
+                ID, Tipo Ocorrência, Data Ocorrência, Hora Ocorrência, Produto, Sistema Impactado, Descrição do Sistema, Tipo de Impacto, Status, Responsável Ocorrência, Descrição da Ocorrência, URL Evidência, Data Solução, Hora Solução, Responsável Solução, Descrição da Solução.
               </p>
             </div>
             <button
@@ -296,6 +359,58 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
             </div>
           )}
 
+          {/* Column Mapping Panel (De / Para) */}
+          {excelHeaders.length > 0 && (
+            <div className="bg-slate-50/80 rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
+              <button
+                type="button"
+                onClick={() => setShowMappingPanel(!showMappingPanel)}
+                className="w-full p-4 flex items-center justify-between bg-slate-100/70 hover:bg-slate-100 transition-colors text-left"
+              >
+                <div className="flex items-center gap-2.5">
+                  <SlidersHorizontal className="w-4 h-4 text-indigo-600" />
+                  <span className="text-xs font-bold text-slate-900">
+                    Relacionar Colunas da Planilha (Mapeamento De / Para)
+                  </span>
+                  <span className="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full">
+                    {excelHeaders.length} colunas encontradas
+                  </span>
+                </div>
+                {showMappingPanel ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+              </button>
+
+              {showMappingPanel && (
+                <div className="p-4 border-t border-slate-200/60 space-y-3">
+                  <p className="text-[11px] text-slate-500">
+                    Confirme qual coluna da sua planilha corresponde a cada campo do sistema:
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {MAPPING_FIELDS.map((field) => (
+                      <div key={field.key} className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200 gap-2">
+                        <label className="text-xs font-semibold text-slate-700 flex items-center gap-1 min-w-[140px]">
+                          <span>{field.label}</span>
+                          {field.required && <span className="text-rose-500 font-bold">*</span>}
+                        </label>
+                        <select
+                          value={columnMapping[field.key] || ''}
+                          onChange={(e) => handleMappingChange(field.key, e.target.value)}
+                          className="text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white text-slate-800 font-medium flex-1 max-w-[200px]"
+                        >
+                          <option value="">--(Não Mapear)--</option>
+                          {excelHeaders.map((header) => (
+                            <option key={header} value={header}>
+                              {header}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Preview Table */}
           {parsedData.length > 0 && (
             <div className="space-y-3">
@@ -325,7 +440,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
                         <td className="py-2 px-3 font-mono font-bold text-slate-800">{occ.id || '#'}</td>
                         <td className="py-2 px-3 whitespace-nowrap">{occ.dataOcorrencia} {occ.horaOcorrencia}</td>
                         <td className="py-2 px-3 font-semibold text-slate-900">{occ.produto}</td>
-                        <td className="py-2 px-3 max-w-[150px] truncate">{occ.sistemaImpactado}</td>
+                        <td className="py-2 px-3 max-w-[150px] truncate font-bold text-blue-700">{occ.sistemaImpactado}</td>
                         <td className="py-2 px-3">{occ.tipoImpacto}</td>
                         <td className="py-2 px-3 font-semibold text-emerald-700">{occ.status}</td>
                         <td className="py-2 px-3">{occ.responsavelOcorrencia}</td>
